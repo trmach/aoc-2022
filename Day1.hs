@@ -1,10 +1,9 @@
-import MP4
 import System.IO
 import Control.Monad
 import Data.List.Split
 import Data.List
 
-filename = "day-1.txt"
+filename = "Day1.txt"
 
 hell :: [[Int]] -> [[String]] -> [[Int]] -- hell
 hell _ [] = []
