@@ -1,6 +1,5 @@
 {-# LANGUAGE InstanceSigs #-}
 import System.IO
-import Control.Monad
 
 filename :: String
 filename = "Day2.txt"
