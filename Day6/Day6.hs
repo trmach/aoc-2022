@@ -23,7 +23,7 @@ findMarker l | length (nub $ take 4 l) < 4 = 1 + findMarker (drop 1 l)
 findMessage :: String -> Int
 findMessage [] = undefined -- we should get an error if for some reason we reach the end of a list
 findMessage l | length (nub $ take 14 l) < 14 = 1 + findMessage (drop 1 l)
-             | otherwise = 14
+              | otherwise = 14
 
 main :: IO ()
 main = do
