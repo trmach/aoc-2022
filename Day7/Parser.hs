@@ -1,9 +1,11 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use lambda-case" #-}
 module Parser where
 
 import Data.Char
 
-data State s a = State { run :: s -> Maybe (a, s) } -- run: accept state and possibly return a new state and a value
+newtype State s a = State { run :: s -> Maybe (a, s) } -- run: accept state and possibly return a new state and a value
 
 instance Functor (State s) where
     fmap :: (a -> b) -> State s a -> State s b
@@ -31,7 +33,7 @@ class Applicative f => Alternative f where
     many x = some x <|> pure []
 
     some :: f a -> f [a]
-    some x = pure (:) <*> x <*> many x
+    some x = ((:) <$> x) <*> many x
 
 instance Alternative (State s) where
     empty :: State s a
@@ -50,12 +52,12 @@ item = State $ \input -> case input of "" -> Nothing
 sat :: (Char -> Bool) -> Parser Char    
 sat p = do
     x <- item
-    if p x then return x else State (\_ -> Nothing)
+    if p x then return x else State (const Nothing)
 
 unsat :: (Char -> Bool) -> Parser Char
 unsat p = do
     x <- item
-    if p x then State (\_ -> Nothing) else return x
+    if p x then State (const Nothing) else return x
 
 char :: Char -> Parser Char
 char c = sat (==c)
@@ -129,12 +131,16 @@ getFile = do size <- nat
 parseInstruction :: Parser String
 parseInstruction = do prompt
                       cmd <- parseCd <|> parseLs
-                      case cmd of "ls" -> undefined {- get multiple lines -}
-                                  "cd" -> identifier {- get dir indentifier -}
-                                  _ -> undefined-- definitely undefined so throw error
+                      case cmd of "ls" -> return "Contents: " {- parseDirContents -}
+                                  "cd" -> (do i <- identifier
+                                              case i of ".." -> return "Going back one dir."
+                                                        _ -> return ("Going to " ++ i)) {- get dir indentifier -}
+                                  _ -> return "bitchass" -- definitely undefined so throw error
 
-parseDirContents :: Parser (String, Int) -- Int will be the sum of the immediate contents
-parseDirContents = do item <- identifier -- sometimes item is "dir", sometimes it is a number
-                      name <- identifier -- this is the name of the dir or file
-                      
-                      return ("h", 0)
+parseDirContents :: Parser [String] -- Int will be the sum of the immediate contents
+parseDirContents = some (do t <- unsat (=='$')
+                            item <- identifier -- sometimes item is "dir", sometimes it is a number
+                            name <- identifier -- this is the name of the dir or file
+                            if isDigit t 
+                              then return ("File: " ++ name ++ "\nSize: " ++ t:item)
+                              else return ("Dir: " ++ name))
